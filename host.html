@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidence Trivia — Host</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="host">
+  <header>
+    <div class="brand">CONFIDENCE TRIVIA</div>
+    <div class="join hidden" id="joinBox">
+      <div style="text-align:right">
+        <div class="muted" style="font-size:.8em" id="joinUrlSmall"></div>
+        <div>Room <span class="code" id="codeSmall"></span></div>
+      </div>
+      <div class="mini-qr" id="miniQr"></div>
+    </div>
+    <div id="netStatus" class="muted"></div>
+  </header>
+  <main id="stage"></main>
+  <footer>
+    <div class="row" id="leftCtl"></div>
+    <div class="hint" id="hint"></div>
+    <div class="row" id="rightCtl"></div>
+  </footer>
+</div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="common.js"></script>
+<script>
+const SAVE_KEY = 'cptrivia-host-v1';
+const stage = document.getElementById('stage');
+const leftCtl = document.getElementById('leftCtl');
+const rightCtl = document.getElementById('rightCtl');
+const hintEl = document.getElementById('hint');
+
+let S = null;              // game state (persisted)
+let net = null;            // transport
+const connTeam = new Map(); // connId -> teamId
+const online = new Map();   // teamId -> count of open conns
+let loadedSet = null;       // question set chosen on setup screen
+let loadedSetName = '';
+let timerInterval = null;
+let primaryAction = null;
+
+// ---------------- Question set loading ----------------
+function validateSet(qs) {
+  if (!qs || !Array.isArray(qs.rounds) || !qs.rounds.length) throw new Error('Needs a "rounds" list');
+  qs.rounds.forEach((r, i) => {
+    if (!r.category) throw new Error(`Round ${i + 1} is missing "category"`);
+    if (!Array.isArray(r.questions) || !r.questions.length) throw new Error(`Round ${i + 1} has no questions`);
+    r.questions.forEach((q, j) => { if (!q.q || q.a == null) throw new Error(`Round ${i + 1} question ${j + 1} needs "q" and "a"`); q.a = String(q.a); });
+  });
+  if (qs.final && (!qs.final.q || qs.final.a == null)) throw new Error('"final" needs "q" and "a"');
+  if (qs.final) qs.final.a = String(qs.final.a);
+  return qs;
+}
+
+async function loadDefaultSet() {
+  try {
+    const r = await fetch('questions.json', { cache: 'no-store' });
+    loadedSet = validateSet(await r.json());
+    loadedSetName = 'questions.json';
+  } catch (e) {
+    loadedSet = null;
+    loadedSetName = 'Could not load questions.json (' + e.message + ')';
+  }
+}
+
+// ---------------- Persistence ----------------
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function loadSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
+
+// ---------------- Derived values ----------------
+const rk = (r, q) => r + '-' + q;
+function teamById(id) { return S.teams.find((t) => t.id === id); }
+function baseScore(teamId) {
+  let s = 0;
+  for (const res of Object.values(S.results)) { const x = res[teamId]; if (x && x.correct) s += x.wager; }
+  return s;
+}
+function scoreOf(teamId) {
+  let s = baseScore(teamId);
+  if (S.final && S.final.revealed.includes(teamId)) {
+    const w = S.final.wagers[teamId] || 0;
+    const res = S.final.results[teamId];
+    s += res && res.correct ? w : -w;
+  }
+  return s;
+}
+function roundPoints(teamId, r) {
+  let s = 0;
+  for (const [k, res] of Object.entries(S.results)) {
+    if (k.split('-')[0] == r) { const x = res[teamId]; if (x && x.correct) s += x.wager; }
+  }
+  return s;
+}
+function usedNums(teamId, r) {
+  const used = [];
+  for (const [k, res] of Object.entries(S.results)) {
+    if (k.split('-')[0] == r && res[teamId]) used.push(res[teamId].wager);
+  }
+  return used;
+}
+function round() { return S.qs.rounds[S.curRound]; }
+function question() { return round().questions[S.qIdx]; }
+function standings() {
+  return S.teams.map((t) => ({ id: t.id, name: t.name, score: scoreOf(t.id) }))
+    .sort((a, b) => b.score - a.score);
+}
+function remainingRounds() { return S.qs.rounds.map((_, i) => i).filter((i) => !S.played.includes(i)); }
+function timeLeft() {
+  if (!S.timerEndsAt) return null;
+  return Math.max(0, Math.ceil((S.timerEndsAt - Date.now()) / 1000));
+}
+function joinUrl() {
+  const base = location.href.split('?')[0].replace(/host\.html$/, '');
+  return base + '?room=' + S.code + (LOCAL_MODE ? '&local=1' : '');
+}
+
+// ---------------- Networking ----------------
+function startNet() {
+  if (net) net.destroy();
+  connTeam.clear(); online.clear();
+  net = createHostTransport(S.code, {
+    onOpen: (cid) => sendView(cid),
+    onClose: (cid) => { unbind(cid); broadcast(); render(); },
+    onMessage: (cid, m) => handleMsg(cid, m),
+    onStatus: (text, ok) => {
+      const el = document.getElementById('netStatus');
+      el.textContent = text; el.className = ok ? 'status-online' : 'status-off';
+    },
+  });
+}
+function bind(cid, teamId) {
+  unbind(cid);
+  connTeam.set(cid, teamId);
+  online.set(teamId, (online.get(teamId) || 0) + 1);
+}
+function unbind(cid) {
+  const t = connTeam.get(cid);
+  if (t) { online.set(t, Math.max(0, (online.get(t) || 1) - 1)); connTeam.delete(cid); }
+}
+
+function handleMsg(cid, m) {
+  if (!m || typeof m !== 'object' || !S) return;
+  const reply = (error) => sendView(cid, error);
+  if (m.t === 'hello') {
+    if (m.teamId && teamById(m.teamId)) bind(cid, m.teamId);
+    reply(); render(); return;
+  }
+  if (m.t === 'join') {
+    const name = String(m.name || '').trim().slice(0, 24);
+    let team = m.teamId && teamById(m.teamId);
+    if (!team) {
+      if (!name) return reply('Enter a team name');
+      if (S.teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) return reply('That name is taken. Tap it below to join that team, or pick another name.');
+      team = { id: m.teamId || uid(), name };
+      S.teams.push(team);
+    }
+    bind(cid, team.id);
+    changed(); return;
+  }
+  if (m.t === 'leave') { unbind(cid); reply(); render(); return; }
+
+  const teamId = connTeam.get(cid);
+  if (!teamId) return reply('Join a team first');
+
+  if (m.t === 'answer' && S.phase === 'question') {
+    const text = String(m.text || '').trim().slice(0, 120);
+    const w = Number(m.wager);
+    const n = round().questions.length;
+    if (!text) return reply('Type an answer');
+    if (!Number.isInteger(w) || w < 1 || w > n) return reply('Pick a confidence number');
+    if (usedNums(teamId, S.curRound).includes(w)) return reply(`You already used ${w} this round`);
+    S.answers[teamId] = { text, wager: w };
+    changed(); return;
+  }
+  if (m.t === 'finalWager' && S.phase === 'finalIntro') {
+    const max = Math.max(0, baseScore(teamId));
+    const w = Math.floor(Number(m.wager));
+    if (!Number.isFinite(w) || w < 0 || w > max) return reply(`Wager must be 0–${max}`);
+    S.final.wagers[teamId] = w;
+    changed(); return;
+  }
+  if (m.t === 'finalAnswer' && S.phase === 'finalQuestion') {
+    const text = String(m.text || '').trim().slice(0, 120);
+    if (!text) return reply('Type an answer');
+    S.final.answers[teamId] = text;
+    changed(); return;
+  }
+  reply();
+}
+
+function viewFor(cid, error) {
+  const teamId = connTeam.get(cid) || null;
+  const team = teamId && teamById(teamId);
+  const v = {
+    t: 'state', code: S.code, phase: S.phase, title: S.qs.title || '',
+    teams: S.teams.map((t) => ({ id: t.id, name: t.name })),
+    standings: standings(),
+    me: team ? { id: team.id, name: team.name, score: scoreOf(team.id) } : null,
+    timeLeft: timeLeft(),
+    error: error || null,
+  };
+  if (['roundIntro', 'question', 'reveal', 'roundEnd'].includes(S.phase)) {
+    v.round = { num: S.played.length, total: S.qs.rounds.length, category: round().category, qNum: S.qIdx + 1, qCount: round().questions.length };
+  }
+  if (S.phase === 'question' || S.phase === 'reveal') v.question = question().q;
+  if (team && S.phase === 'question') {
+    const n = round().questions.length, used = usedNums(team.id, S.curRound);
+    v.nums = Array.from({ length: n }, (_, i) => i + 1).map((x) => ({ n: x, used: used.includes(x) }));
+    v.mine = S.answers[team.id] || null;
+  }
+  if (S.phase === 'reveal') {
+    v.answer = question().a;
+    if (team) v.result = S.results[rk(S.curRound, S.qIdx)][team.id] || null;
+  }
+  if (S.phase === 'roundEnd' && team) v.roundPts = roundPoints(team.id, S.curRound);
+  if (S.final && S.phase.startsWith('final')) {
+    v.final = { category: S.qs.final.category || 'Final' };
+    if (team) {
+      v.final.max = Math.max(0, baseScore(team.id));
+      v.final.wager = S.final.wagers[team.id] ?? null;
+      v.final.answer = S.final.answers[team.id] ?? null;
+    }
+    if (S.phase !== 'finalIntro') v.question = S.qs.final.q;
+    if (S.phase === 'finalReveal') {
+      if (S.final.answerShown) v.answer = S.qs.final.a;
+      if (team && S.final.revealed.includes(team.id)) v.final.result = { correct: !!(S.final.results[team.id] || {}).correct };
+    }
+  }
+  if (S.phase === 'gameOver') v.answer = S.qs.final ? S.qs.final.a : null;
+  return v;
+}
+function sendView(cid, error) { if (net && S) net.send(cid, viewFor(cid, error)); }
+function broadcast() { if (net && S) for (const cid of net.connIds()) sendView(cid); }
+function changed() { save(); broadcast(); render(); }
+
+// ---------------- Game flow ----------------
+function newGame(timerSecs) {
+  S = {
+    code: makeCode(), timerSecs, qs: JSON.parse(JSON.stringify(loadedSet)),
+    teams: [], phase: 'lobby', played: [], curRound: null, qIdx: 0,
+    answers: {}, results: {}, timerEndsAt: null, final: null,
+  };
+  startNet(); changed();
+}
+function go(phase) { S.phase = phase; changed(); }
+
+function pickRound(i) {
+  S.curRound = i; S.played.push(i); S.qIdx = 0; go('roundIntro');
+}
+function startQuestion() {
+  S.answers = {};
+  S.timerEndsAt = S.timerSecs ? Date.now() + S.timerSecs * 1000 : null;
+  go('question');
+}
+function revealQuestion() {
+  const q = question();
+  const res = {};
+  for (const [tid, a] of Object.entries(S.answers)) {
+    const ok = isCorrect(a.text, q);
+    res[tid] = { text: a.text, wager: a.wager, correct: ok, auto: ok };
+  }
+  S.results[rk(S.curRound, S.qIdx)] = res;
+  S.answers = {}; S.timerEndsAt = null;
+  go('reveal');
+}
+function toggleGrade(tid) {
+  const res = S.results[rk(S.curRound, S.qIdx)][tid];
+  res.correct = !res.correct; changed();
+}
+function afterReveal() {
+  if (S.qIdx + 1 < round().questions.length) { S.qIdx++; startQuestion(); }
+  else go('roundEnd');
+}
+function afterRoundEnd() {
+  if (remainingRounds().length) go('pick');
+  else toFinal();
+}
+function toFinal() {
+  if (!S.qs.final) { go('gameOver'); return; }
+  S.final = { wagers: {}, answers: {}, results: {}, revealed: [], answerShown: false };
+  S.curRound = null;
+  go('finalIntro');
+}
+function startFinalQuestion() {
+  for (const t of S.teams) if (S.final.wagers[t.id] == null) S.final.wagers[t.id] = 0;
+  S.timerEndsAt = S.timerSecs ? Date.now() + Math.max(S.timerSecs, 30) * 1000 : null;
+  go('finalQuestion');
+}
+function startFinalReveal() {
+  S.timerEndsAt = null;
+  for (const t of S.teams) {
+    const a = S.final.answers[t.id];
+    S.final.results[t.id] = { correct: a ? isCorrect(a, S.qs.final) : false };
+  }
+  go('finalReveal');
+}
+function finalOrder() {
+  // Reveal lowest pre-final score first, leader last.
+  return S.teams.map((t) => ({ id: t.id, base: baseScore(t.id) })).sort((a, b) => a.base - b.base).map((x) => x.id);
+}
+function revealNextFinal() {
+  const next = finalOrder().find((id) => !S.final.revealed.includes(id));
+  if (next) { S.final.revealed.push(next); changed(); }
+}
+
+// ---------------- Timer ----------------
+function syncTimer() {
+  clearInterval(timerInterval);
+  if (!S || !S.timerEndsAt) return;
+  timerInterval = setInterval(() => {
+    const el = document.getElementById('timer');
+    const t = timeLeft();
+    if (el) { el.textContent = fmt(t); el.classList.toggle('low', t <= 5); }
+    if (t <= 0) {
+      clearInterval(timerInterval);
+      // 1.5s grace for answers in flight
+      setTimeout(() => {
+        if (S.phase === 'question' && S.timerEndsAt && timeLeft() <= 0) revealQuestion();
+        else if (S.phase === 'finalQuestion' && S.timerEndsAt && timeLeft() <= 0) startFinalReveal();
+      }, 1500);
+    }
+  }, 250);
+}
+function addTime(sec) { if (S.timerEndsAt) { S.timerEndsAt = Math.max(S.timerEndsAt, Date.now()) + sec * 1000; changed(); } }
+const fmt = (t) => (t == null ? '' : Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'));
+
+// ---------------- Rendering ----------------
+function qrSvg(text) {
+  try { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); }
+  catch (e) { return ''; }
+}
+function controls(left, right, hint) {
+  leftCtl.replaceChildren(...(left || []));
+  rightCtl.replaceChildren(...(right || []));
+  hintEl.textContent = hint || '';
+  const prim = (right || []).find((b) => b.classList && b.classList.contains('primary') && !b.disabled);
+  primaryAction = prim ? () => prim.click() : null;
+}
+function btn(label, onclick, cls) { return h('button', { class: cls || '', onclick }, label); }
+function statusPills(doneSet) {
+  return h('div', { class: 'statuses' }, S.teams.map((t) =>
+    h('span', { class: 'pill' + (doneSet.has(t.id) ? ' done' : '') },
+      h('span', { class: 'dot' + (online.get(t.id) ? ' on' : '') }), t.name, doneSet.has(t.id) ? ' ✓' : '')));
+}
+function boardEl(showRound) {
+  const st = standings();
+  return h('div', { class: 'board' }, st.map((t, i) => {
+    const rp = showRound != null ? roundPoints(t.id, showRound) : null;
+    return h('div', { class: 'line' + (i === 0 && t.score > 0 ? ' first' : '') },
+      h('span', { class: 'rank' }, '#' + (i + 1)),
+      h('span', { class: 'name' }, t.name),
+      h('span', { class: 'delta' }, rp != null ? '+' + rp + ' this round' : ''),
+      h('span', { class: 'pts' }, t.score));
+  }));
+}
+
+function render() {
+  const joinBox = document.getElementById('joinBox');
+  if (!S) { joinBox.classList.add('hidden'); return renderSetup(); }
+  joinBox.classList.toggle('hidden', S.phase === 'lobby');
+  document.getElementById('codeSmall').textContent = S.code;
+  document.getElementById('joinUrlSmall').textContent = joinUrl().replace(/^https?:\/\//, '');
+  const mq = document.getElementById('miniQr');
+  if (mq.dataset.url !== joinUrl()) { mq.innerHTML = qrSvg(joinUrl()); mq.dataset.url = joinUrl(); }
+  ({
+    lobby: renderLobby, pick: renderPick, roundIntro: renderRoundIntro, question: renderQuestion,
+    reveal: renderReveal, roundEnd: renderRoundEnd, finalIntro: renderFinalIntro,
+    finalQuestion: renderFinalQuestion, finalReveal: renderFinalReveal, gameOver: renderGameOver,
+  })[S.phase]();
+  syncTimer();
+}
+
+function renderSetup() {
+  const saved = loadSaved();
+  const fileIn = h('input', { type: 'file', accept: '.json,application/json', class: 'hidden', onchange: async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { loadedSet = validateSet(JSON.parse(await f.text())); loadedSetName = f.name; }
+    catch (err) { alert('That file has a problem: ' + err.message); }
+    render();
+  } });
+  const timerSel = h('select', { id: 'timerSel' },
+    [['0', 'No timer'], ['20', '20 seconds'], ['30', '30 seconds'], ['45', '45 seconds'], ['60', '60 seconds'], ['90', '90 seconds']]
+      .map(([v, l]) => h('option', { value: v, selected: v === (localStorage.getItem('cptrivia-timer') || '30') }, l)));
+  const setInfo = loadedSet
+    ? h('div', { class: 'stack' },
+        h('div', null, h('b', null, loadedSet.title || 'Untitled set'), h('span', { class: 'muted' }, '  ·  ' + loadedSetName)),
+        h('div', { class: 'statuses' }, loadedSet.rounds.map((r) => h('span', { class: 'pill' }, r.category, h('span', { class: 'muted' }, ' ' + r.questions.length)))),
+        h('div', { class: 'muted' }, loadedSet.final ? 'Final: ' + (loadedSet.final.category || 'Final question') : 'No final question'))
+    : h('div', { class: 'bad' }, loadedSetName || 'No questions loaded');
+  stage.replaceChildren(h('div', { class: 'setup stack' },
+    h('div', { class: 'huge' }, 'Confidence', h('br'), h('span', { class: 'gold' }, 'Trivia')),
+    saved && saved.phase !== 'gameOver' ? h('div', { class: 'card row', style: 'justify-content:space-between' },
+      h('div', null, 'Unfinished game ', h('b', { class: 'gold' }, saved.code), h('span', { class: 'muted' }, ` · ${saved.teams.length} teams · ${saved.phase}`)),
+      h('div', { class: 'row' },
+        btn('Discard', () => { localStorage.removeItem(SAVE_KEY); render(); }, 'ghost'),
+        btn('Resume', () => { S = saved; startNet(); render(); }, 'primary'))) : null,
+    h('div', { class: 'card stack' }, h('div', { class: 'eyebrow' }, 'Questions'), setInfo,
+      h('div', null, btn('Load a different question file…', () => fileIn.click()), fileIn)),
+    h('div', { class: 'card stack' }, h('div', { class: 'eyebrow' }, 'Time per question'), timerSel)));
+  controls([], [btn('Create game', () => {
+    if (!loadedSet) return alert('Load a question file first');
+    const t = Number(document.getElementById('timerSel').value);
+    localStorage.setItem('cptrivia-timer', String(t));
+    newGame(t);
+  }, 'primary')], '');
+}
+
+function renderLobby() {
+  stage.replaceChildren(h('div', { class: 'lobby' },
+    h('div', { class: 'qr', html: '' }),
+    h('div', { class: 'stack' },
+      h('div', { class: 'eyebrow' }, 'Scan or go to'),
+      h('div', { style: 'font-size:1.4em;font-weight:800;word-break:break-all' }, joinUrl().replace(/^https?:\/\//, '')),
+      h('div', { class: 'eyebrow', style: 'margin-top:16px' }, 'Room code'),
+      h('div', { class: 'huge gold', style: 'letter-spacing:.12em' }, S.code),
+      h('div', { class: 'eyebrow', style: 'margin-top:16px' }, `Teams (${S.teams.length})`),
+      S.teams.length
+        ? h('div', { class: 'statuses' }, S.teams.map((t) => h('span', { class: 'pill' },
+            h('span', { class: 'dot' + (online.get(t.id) ? ' on' : '') }), t.name,
+            h('button', { class: 'ghost danger', style: 'padding:0 4px;border:0', title: 'Remove team', onclick: () => {
+              S.teams = S.teams.filter((x) => x.id !== t.id);
+              for (const [cid, tid] of connTeam) if (tid === t.id) unbind(cid);
+              changed();
+            } }, '×'))))
+        : h('div', { class: 'muted' }, 'Waiting for teams to join…'))));
+  stage.querySelector('.qr').innerHTML = qrSvg(joinUrl());
+  controls([btn('Cancel game', () => { if (confirm('End this game?')) { localStorage.removeItem(SAVE_KEY); net.destroy(); S = null; render(); } }, 'ghost')],
+    [Object.assign(btn('Start game', () => go('pick'), 'primary'), { disabled: !S.teams.length })],
+    'One phone per team (teammates can join the same team too)');
+}
+
+function renderPick() {
+  const rem = remainingRounds();
+  const st = standings();
+  let picker = null;
+  if (S.played.length && st.length) {
+    const low = st[st.length - 1].score;
+    const lows = st.filter((t) => t.score === low).map((t) => t.name);
+    picker = lows.length === st.length ? null : lows.join(' / ');
+  }
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, `Round ${S.played.length + 1} of ${S.qs.rounds.length}`),
+    h('div', { class: 'big-q' }, picker ? h('span', null, h('span', { class: 'gold' }, picker), ' picks the next category') : 'Pick a category'),
+    h('div', { class: 'cats' }, rem.map((i) => h('button', { class: 'cat', onclick: () => pickRound(i) },
+      h('div', { style: 'font-weight:900' }, S.qs.rounds[i].category),
+      h('div', { class: 'muted', style: 'font-size:.7em;margin-top:6px' }, S.qs.rounds[i].questions.length + ' questions')))));
+  controls([], [S.qs.final ? btn('Skip to final question', () => { if (confirm('Skip the remaining rounds and go to the final?')) toFinal(); }) : btn('End game', () => go('gameOver'))],
+    'Click a category');
+}
+
+function renderRoundIntro() {
+  const n = round().questions.length;
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, `Round ${S.played.length} of ${S.qs.rounds.length}`),
+    h('div', { class: 'huge' }, round().category),
+    h('div', { class: 'big-q', style: 'font-size:clamp(22px,2vw,40px);font-weight:600' },
+      `${n} questions. Use each confidence number `, h('span', { class: 'gold' }, `1–${n}`), ' exactly once. Right answer = that many points.'));
+  controls([], [btn('First question →', startQuestion, 'primary')], 'Enter / → to continue');
+}
+
+function renderQuestion() {
+  const done = new Set(Object.keys(S.answers));
+  const t = timeLeft();
+  stage.replaceChildren(
+    h('div', { class: 'row', style: 'justify-content:space-between' },
+      h('div', { class: 'eyebrow' }, `${round().category} · Question ${S.qIdx + 1} of ${round().questions.length}`),
+      S.timerEndsAt ? h('div', { class: 'timer' + (t <= 5 ? ' low' : ''), id: 'timer' }, fmt(t)) : null),
+    h('div', { class: 'big-q' }, question().q),
+    h('div', { class: 'muted' }, `Answers in: ${done.size} / ${S.teams.length}`),
+    statusPills(done));
+  controls(S.timerEndsAt ? [btn('+15s', () => addTime(15), 'ghost')] : [],
+    [btn(done.size >= S.teams.length ? 'All in — reveal answer' : 'Reveal answer', revealQuestion, 'primary')],
+    'Teams can change answers until the reveal');
+}
+
+function renderReveal() {
+  const res = S.results[rk(S.curRound, S.qIdx)];
+  const last = S.qIdx + 1 >= round().questions.length;
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, `${round().category} · Question ${S.qIdx + 1} of ${round().questions.length}`),
+    h('div', { class: 'big-q', style: 'font-size:clamp(20px,1.8vw,36px);font-weight:600' }, question().q),
+    h('div', { class: 'big-a' }, question().a),
+    h('table', { class: 'results' }, h('tbody', null, S.teams.map((t) => {
+      const r = res[t.id];
+      return h('tr', null,
+        h('td', null, t.name),
+        h('td', { class: 'ans' }, r ? '“' + r.text + '”' : h('span', { class: 'none' }, 'no answer')),
+        h('td', null, r ? h('span', { class: 'conf' }, r.wager) : ''),
+        h('td', null, r ? h('button', { class: 'toggle ' + (r.correct ? 'yes' : 'no'), title: 'Click to flip', onclick: () => toggleGrade(t.id) }, r.correct ? '✓ +' + r.wager : '✗') : ''),
+        h('td', { style: 'font-weight:900' }, scoreOf(t.id)));
+    }))));
+  controls([], [btn(last ? 'End of round →' : 'Next question →', afterReveal, 'primary')], 'Click ✓/✗ to overrule the auto-grader');
+}
+
+function renderRoundEnd() {
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, `End of round ${S.played.length} · ${round().category}`),
+    h('div', { class: 'huge', style: 'font-size:clamp(36px,4vw,80px)' }, 'Scoreboard'),
+    boardEl(S.curRound));
+  const more = remainingRounds().length;
+  controls([], [btn(more ? 'Next round →' : (S.qs.final ? 'Final question →' : 'Final results →'), afterRoundEnd, 'primary')], '');
+}
+
+function renderFinalIntro() {
+  const done = new Set(Object.keys(S.final.wagers));
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, 'Final question'),
+    h('div', { class: 'huge' }, S.qs.final.category || 'Final'),
+    h('div', { class: 'big-q', style: 'font-size:clamp(22px,2vw,40px);font-weight:600' },
+      'Wager any amount up to your score on your phone. Nobody else sees it.'),
+    boardEl(null),
+    h('div', { class: 'muted' }, `Wagers in: ${done.size} / ${S.teams.length}`),
+    statusPills(done));
+  controls([], [btn(done.size >= S.teams.length ? 'All in — show question' : 'Show question', () => {
+    if (done.size < S.teams.length && !confirm('Not everyone has wagered. Missing teams wager 0. Continue?')) return;
+    startFinalQuestion();
+  }, 'primary')], '');
+}
+
+function renderFinalQuestion() {
+  const done = new Set(Object.keys(S.final.answers));
+  const t = timeLeft();
+  stage.replaceChildren(
+    h('div', { class: 'row', style: 'justify-content:space-between' },
+      h('div', { class: 'eyebrow' }, 'Final question · ' + (S.qs.final.category || '')),
+      S.timerEndsAt ? h('div', { class: 'timer' + (t <= 5 ? ' low' : ''), id: 'timer' }, fmt(t)) : null),
+    h('div', { class: 'big-q' }, S.qs.final.q),
+    h('div', { class: 'muted' }, `Answers in: ${done.size} / ${S.teams.length}`),
+    statusPills(done));
+  controls(S.timerEndsAt ? [btn('+15s', () => addTime(15), 'ghost')] : [], [btn('Lock answers', startFinalReveal, 'primary')], '');
+}
+
+function renderFinalReveal() {
+  const order = finalOrder();
+  const allDone = order.every((id) => S.final.revealed.includes(id));
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, 'Final question'),
+    h('div', { class: 'big-q', style: 'font-size:clamp(20px,1.8vw,36px);font-weight:600' }, S.qs.final.q),
+    S.final.answerShown ? h('div', { class: 'big-a' }, S.qs.final.a) : h('div', { class: 'big-a muted' }, '?'),
+    h('div', { class: 'final-cards' }, order.map((id) => {
+      const t = teamById(id), rev = S.final.revealed.includes(id);
+      const res = S.final.results[id] || {}, w = S.final.wagers[id] || 0, a = S.final.answers[id];
+      return h('div', { class: 'final-card' + (rev ? ' revealed ' + (res.correct ? 'right' : 'wrong') : '') },
+        h('div', { style: 'font-weight:900;font-size:1.2em' }, t.name),
+        h('div', { class: 'muted' }, 'Before final: ' + baseScore(id)),
+        rev ? [
+          h('div', { class: 'ans', style: 'font-style:italic' }, a ? '“' + a + '”' : h('span', { class: 'muted' }, 'no answer')),
+          h('div', { class: 'row' },
+            h('button', { class: 'toggle ' + (res.correct ? 'yes' : 'no'), onclick: () => { res.correct = !res.correct; changed(); } }, res.correct ? '✓' : '✗'),
+            h('span', null, 'Wager ', h('b', null, w)),
+            h('span', { style: 'margin-left:auto;font-weight:900;font-size:1.4em' }, scoreOf(id)))
+        ] : h('button', { onclick: () => { if (!S.final.revealed.includes(id)) { S.final.revealed.push(id); changed(); } } }, 'Reveal'));
+    })));
+  const right = [];
+  if (!S.final.answerShown) right.push(btn('Show correct answer', () => { S.final.answerShown = true; changed(); }));
+  right.push(allDone ? btn('Final standings →', () => go('gameOver'), 'primary') : btn('Reveal next team', revealNextFinal, 'primary'));
+  controls([], right, 'Lowest score revealed first');
+}
+
+function renderGameOver() {
+  const st = standings();
+  const top = st.length ? st[0].score : 0;
+  const winners = st.filter((t) => t.score === top).map((t) => t.name).join(' & ');
+  stage.replaceChildren(
+    h('div', { class: 'eyebrow' }, 'Final standings'),
+    h('div', { class: 'huge' }, h('span', { class: 'gold' }, winners || '—'), winners.includes('&') ? ' tie!' : ' wins!'),
+    boardEl(null));
+  controls([], [btn('Back to start', () => { localStorage.removeItem(SAVE_KEY); net.destroy(); S = null; render(); }, 'primary')], '');
+}
+
+// ---------------- Keyboard ----------------
+document.addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  if ((e.key === 'Enter' || e.key === 'ArrowRight' || e.key === ' ') && primaryAction) {
+    e.preventDefault(); primaryAction();
+  }
+});
+
+(async () => {
+  await loadDefaultSet();
+  render();
+})();
+</script>
+</body>
+</html>

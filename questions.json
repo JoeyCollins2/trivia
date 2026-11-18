@@ -1,0 +1,626 @@
+{
+  "title": "Game Night #2 (Hard Mode + Pop Culture)",
+  "rounds": [
+    {
+      "category": "Disney",
+      "questions": [
+        {
+          "q": "In The Little Mermaid, what does Ariel call a fork?",
+          "a": "Dinglehopper",
+          "accept": [
+            "A dinglehopper"
+          ]
+        },
+        {
+          "q": "What is the name of Rapunzel's chameleon in Tangled?",
+          "a": "Pascal"
+        },
+        {
+          "q": "What is the name of Moana's rooster?",
+          "a": "Heihei",
+          "accept": [
+            "Hei Hei"
+          ]
+        },
+        {
+          "q": "In Beauty and the Beast, what is the name of the teapot?",
+          "a": "Mrs. Potts",
+          "accept": [
+            "Mrs Potts",
+            "Potts"
+          ]
+        },
+        {
+          "q": "What is the family's last name in Encanto?",
+          "a": "Madrigal",
+          "accept": [
+            "The Madrigals",
+            "Madrigals"
+          ]
+        },
+        {
+          "q": "What is the name of Mulan's little dragon sidekick?",
+          "a": "Mushu"
+        },
+        {
+          "q": "In The Princess and the Frog, what does Tiana dream of opening?",
+          "a": "A restaurant",
+          "accept": [
+            "Restaurant",
+            "Her own restaurant"
+          ]
+        },
+        {
+          "q": "What is the name of the evil fairy in Sleeping Beauty?",
+          "a": "Maleficent"
+        },
+        {
+          "q": "What is the name of the crab who looks after Ariel?",
+          "a": "Sebastian"
+        },
+        {
+          "q": "In Frozen, what is the name of Kristoff's reindeer?",
+          "a": "Sven"
+        }
+      ]
+    },
+    {
+      "category": "Rom-Coms & Chick Flicks",
+      "questions": [
+        {
+          "q": "In Mean Girls, what color do the Plastics wear on Wednesdays?",
+          "a": "Pink"
+        },
+        {
+          "q": "Who plays Patrick Verona in 10 Things I Hate About You?",
+          "a": "Heath Ledger",
+          "accept": [
+            "Ledger"
+          ]
+        },
+        {
+          "q": "In The Devil Wears Prada, what is the name of the magazine Andy works for?",
+          "a": "Runway",
+          "accept": [
+            "Runway Magazine"
+          ]
+        },
+        {
+          "q": "In Legally Blonde, what is the name of Elle Woods' chihuahua?",
+          "a": "Bruiser",
+          "accept": [
+            "Bruiser Woods"
+          ]
+        },
+        {
+          "q": "What is the main character's first name in Clueless?",
+          "a": "Cher",
+          "accept": [
+            "Cher Horowitz"
+          ]
+        },
+        {
+          "q": "Which actress plays Andie in How to Lose a Guy in 10 Days?",
+          "a": "Kate Hudson",
+          "accept": [
+            "Hudson"
+          ]
+        },
+        {
+          "q": "In 13 Going on 30, which Michael Jackson song gets the whole party dancing?",
+          "a": "Thriller"
+        },
+        {
+          "q": "Who plays Elizabeth Bennet in the 2005 Pride & Prejudice?",
+          "a": "Keira Knightley",
+          "accept": [
+            "Kiera Knightley",
+            "Knightley"
+          ]
+        },
+        {
+          "q": "In The Proposal, which state is Andrew's family from?",
+          "a": "Alaska"
+        },
+        {
+          "q": "Every song in Mamma Mia! was written by which band?",
+          "a": "ABBA"
+        }
+      ]
+    },
+    {
+      "category": "Geography",
+      "questions": [
+        {
+          "q": "Which country's coastline touches both the Atlantic and Indian Oceans?",
+          "a": "South Africa"
+        },
+        {
+          "q": "What is the capital of Kazakhstan?",
+          "a": "Astana",
+          "accept": [
+            "Nur-Sultan",
+            "Nur Sultan"
+          ]
+        },
+        {
+          "q": "Lake Titicaca sits on the border of Peru and which other country?",
+          "a": "Bolivia"
+        },
+        {
+          "q": "Counting its overseas territories, which country has the most time zones?",
+          "a": "France"
+        },
+        {
+          "q": "Which is the only country whose national flag isn't a rectangle or square?",
+          "a": "Nepal"
+        },
+        {
+          "q": "Name either of the two countries completely surrounded by Italy.",
+          "a": "San Marino",
+          "accept": [
+            "Vatican City",
+            "Vatican",
+            "Holy See"
+          ]
+        },
+        {
+          "q": "Which river flows through Baghdad?",
+          "a": "Tigris",
+          "accept": [
+            "Tigris River"
+          ]
+        },
+        {
+          "q": "Which country has more ancient pyramids than any other?",
+          "a": "Sudan"
+        },
+        {
+          "q": "What is the deepest lake in the world?",
+          "a": "Lake Baikal",
+          "accept": [
+            "Baikal"
+          ]
+        },
+        {
+          "q": "Which U.S. state borders only one other state?",
+          "a": "Maine"
+        }
+      ]
+    },
+    {
+      "category": "Reality TV",
+      "questions": [
+        {
+          "q": "Which dating show puts singles in a villa where they have to \"couple up\"?",
+          "a": "Love Island"
+        },
+        {
+          "q": "On The Bachelor, what does the lead hand out at each ceremony?",
+          "a": "A rose",
+          "accept": [
+            "Rose",
+            "Roses"
+          ]
+        },
+        {
+          "q": "What was the name of the Kardashians' original reality show on E!?",
+          "a": "Keeping Up with the Kardashians",
+          "accept": [
+            "KUWTK",
+            "Keeping Up"
+          ]
+        },
+        {
+          "q": "Which real estate brokerage is the setting of Selling Sunset?",
+          "a": "The Oppenheim Group",
+          "accept": [
+            "Oppenheim Group",
+            "Oppenheim"
+          ]
+        },
+        {
+          "q": "On The Great British Bake Off, which judge is famous for his handshake?",
+          "a": "Paul Hollywood",
+          "accept": [
+            "Hollywood",
+            "Paul"
+          ]
+        },
+        {
+          "q": "Which Hulu reality show follows a group of Utah \"MomTok\" influencers?",
+          "a": "The Secret Lives of Mormon Wives",
+          "accept": [
+            "Secret Lives of Mormon Wives",
+            "Mormon Wives"
+          ]
+        },
+        {
+          "q": "On Love Is Blind, what are the rooms called where couples date without seeing each other?",
+          "a": "The pods",
+          "accept": [
+            "Pods",
+            "Pod"
+          ]
+        },
+        {
+          "q": "Bethenny Frankel got her start on The Real Housewives of which city?",
+          "a": "New York",
+          "accept": [
+            "New York City",
+            "NYC",
+            "NY"
+          ]
+        },
+        {
+          "q": "Which singing show originally had Simon Cowell, Paula Abdul and Randy Jackson as judges?",
+          "a": "American Idol"
+        },
+        {
+          "q": "Which reality show is famous for the line \"The tribe has spoken\"?",
+          "a": "Survivor"
+        }
+      ]
+    },
+    {
+      "category": "Pop Divas",
+      "questions": [
+        {
+          "q": "What is Taylor Swift's lucky number?",
+          "a": "13",
+          "accept": [
+            "thirteen"
+          ]
+        },
+        {
+          "q": "What was the name of Taylor Swift's record-breaking tour that ended in 2024?",
+          "a": "The Eras Tour",
+          "accept": [
+            "Eras Tour",
+            "Eras"
+          ]
+        },
+        {
+          "q": "Which singer's fans are known as the \"Beyhive\"?",
+          "a": "Beyoncé",
+          "accept": [
+            "Beyonce"
+          ]
+        },
+        {
+          "q": "What is the name of Olivia Rodrigo's debut album?",
+          "a": "Sour"
+        },
+        {
+          "q": "Sabrina Carpenter's 2024 summer hit is named after which coffee drink?",
+          "a": "Espresso"
+        },
+        {
+          "q": "Which singer released \"Flowers\" in 2023?",
+          "a": "Miley Cyrus",
+          "accept": [
+            "Miley"
+          ]
+        },
+        {
+          "q": "Ariana Grande plays Glinda in which 2024 movie?",
+          "a": "Wicked"
+        },
+        {
+          "q": "Which singer's real name is Robyn Fenty?",
+          "a": "Rihanna"
+        },
+        {
+          "q": "Who sings \"Good Luck, Babe!\" and \"HOT TO GO!\"?",
+          "a": "Chappell Roan",
+          "accept": [
+            "Chappell"
+          ]
+        },
+        {
+          "q": "What is Lady Gaga's real first name?",
+          "a": "Stefani",
+          "accept": [
+            "Stephanie"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Sports",
+      "questions": [
+        {
+          "q": "In golf, what is it called when you finish a hole three under par?",
+          "a": "Albatross",
+          "accept": [
+            "Double eagle"
+          ]
+        },
+        {
+          "q": "Which Utah Jazz legend was nicknamed \"The Mailman\"?",
+          "a": "Karl Malone",
+          "accept": [
+            "Malone"
+          ]
+        },
+        {
+          "q": "Which BYU quarterback won the Heisman Trophy in 1990?",
+          "a": "Ty Detmer",
+          "accept": [
+            "Detmer"
+          ]
+        },
+        {
+          "q": "Which NFL franchise has played in the most Super Bowls?",
+          "a": "New England Patriots",
+          "accept": [
+            "Patriots",
+            "New England"
+          ]
+        },
+        {
+          "q": "Who is the NBA's all-time leading scorer?",
+          "a": "LeBron James",
+          "accept": [
+            "LeBron",
+            "Lebron"
+          ]
+        },
+        {
+          "q": "Which boxer was born Cassius Clay?",
+          "a": "Muhammad Ali",
+          "accept": [
+            "Ali"
+          ]
+        },
+        {
+          "q": "In bowling, what is three strikes in a row called?",
+          "a": "Turkey"
+        },
+        {
+          "q": "The Larry O'Brien Trophy is awarded to the champion of which league?",
+          "a": "NBA",
+          "accept": [
+            "National Basketball Association",
+            "Basketball"
+          ]
+        },
+        {
+          "q": "In curling, what is the circular target area called?",
+          "a": "The house",
+          "accept": [
+            "House"
+          ]
+        },
+        {
+          "q": "Which country has won the most Olympic gold medals in men's ice hockey?",
+          "a": "Canada"
+        }
+      ]
+    },
+    {
+      "category": "TV Shows",
+      "questions": [
+        {
+          "q": "In The Office, what is the name of Angela's cat that Dwight puts in the freezer?",
+          "a": "Sprinkles"
+        },
+        {
+          "q": "What is Rory's real first name in Gilmore Girls?",
+          "a": "Lorelai",
+          "accept": [
+            "Lorelei"
+          ]
+        },
+        {
+          "q": "In Grey's Anatomy, what is Derek Shepherd's nickname?",
+          "a": "McDreamy",
+          "accept": [
+            "Mc Dreamy"
+          ]
+        },
+        {
+          "q": "In New Girl, what is the name of the gang's chaotic drinking game?",
+          "a": "True American"
+        },
+        {
+          "q": "In Friends, what is Phoebe's most famous song?",
+          "a": "Smelly Cat"
+        },
+        {
+          "q": "In Gossip Girl, who is revealed to be Gossip Girl?",
+          "a": "Dan Humphrey",
+          "accept": [
+            "Dan",
+            "Lonely Boy"
+          ]
+        },
+        {
+          "q": "In Bridgerton, what is the pen name of the anonymous gossip writer?",
+          "a": "Lady Whistledown",
+          "accept": [
+            "Whistledown"
+          ]
+        },
+        {
+          "q": "What is the name of the bar in How I Met Your Mother?",
+          "a": "MacLaren's",
+          "accept": [
+            "MacLarens",
+            "McLaren's",
+            "MacLaren's Pub"
+          ]
+        },
+        {
+          "q": "Which TV show is set in the fictional town of Pawnee, Indiana?",
+          "a": "Parks and Recreation",
+          "accept": [
+            "Parks and Rec",
+            "Parks & Rec"
+          ]
+        },
+        {
+          "q": "In Breaking Bad, what is the name of Gus Fring's fried-chicken chain?",
+          "a": "Los Pollos Hermanos",
+          "accept": [
+            "Pollos Hermanos"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Celebs & Internet",
+      "questions": [
+        {
+          "q": "Which NFL player did Taylor Swift get engaged to in 2025?",
+          "a": "Travis Kelce",
+          "accept": [
+            "Kelce",
+            "Travis"
+          ]
+        },
+        {
+          "q": "Which singer and actress founded the makeup brand Rare Beauty?",
+          "a": "Selena Gomez",
+          "accept": [
+            "Selena"
+          ]
+        },
+        {
+          "q": "Which Kardashian-Jenner started her beauty empire with lip kits?",
+          "a": "Kylie Jenner",
+          "accept": [
+            "Kylie"
+          ]
+        },
+        {
+          "q": "On TikTok, what does \"GRWM\" stand for?",
+          "a": "Get Ready With Me"
+        },
+        {
+          "q": "Which brand's 40-ounce tumbler became a viral must-have in 2023?",
+          "a": "Stanley",
+          "accept": [
+            "Stanley Cup",
+            "Stanley Quencher"
+          ]
+        },
+        {
+          "q": "The 2023 \"Barbenheimer\" double feature paired Barbie with which movie?",
+          "a": "Oppenheimer"
+        },
+        {
+          "q": "Which actress is married to Ryan Reynolds?",
+          "a": "Blake Lively",
+          "accept": [
+            "Blake"
+          ]
+        },
+        {
+          "q": "On which dating app do women have to send the first message?",
+          "a": "Bumble"
+        },
+        {
+          "q": "Which app's logo is a white ghost on a yellow background?",
+          "a": "Snapchat",
+          "accept": [
+            "Snap"
+          ]
+        },
+        {
+          "q": "What was the name of Google's social network that shut down in 2019?",
+          "a": "Google+",
+          "accept": [
+            "Google Plus"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "History",
+      "questions": [
+        {
+          "q": "The shortest war in recorded history (about 40 minutes, in 1896) was between Britain and what country?",
+          "a": "Zanzibar"
+        },
+        {
+          "q": "Who was U.S. president during the War of 1812?",
+          "a": "James Madison",
+          "accept": [
+            "Madison"
+          ]
+        },
+        {
+          "q": "What city was the capital of the Byzantine Empire?",
+          "a": "Constantinople",
+          "accept": [
+            "Istanbul",
+            "Byzantium"
+          ]
+        },
+        {
+          "q": "In what year did the Chernobyl nuclear disaster happen?",
+          "a": "1986"
+        },
+        {
+          "q": "In 1893, which country became the first to give women the right to vote in national elections?",
+          "a": "New Zealand"
+        },
+        {
+          "q": "The Golden Spike was driven at Promontory Summit, Utah, in 1869 to complete what?",
+          "a": "Transcontinental railroad",
+          "accept": [
+            "The transcontinental railroad",
+            "First transcontinental railroad",
+            "Railroad",
+            "The railroad"
+          ]
+        },
+        {
+          "q": "Howard Carter found which pharaoh's nearly untouched tomb in 1922?",
+          "a": "Tutankhamun",
+          "accept": [
+            "King Tut",
+            "Tut",
+            "Tutankhamen"
+          ]
+        },
+        {
+          "q": "Who was the first Roman emperor?",
+          "a": "Augustus",
+          "accept": [
+            "Octavian",
+            "Caesar Augustus",
+            "Augustus Caesar"
+          ]
+        },
+        {
+          "q": "The Rosetta Stone was the key to decoding which writing system?",
+          "a": "Egyptian hieroglyphs",
+          "accept": [
+            "Hieroglyphs",
+            "Hieroglyphics",
+            "Egyptian hieroglyphics"
+          ]
+        },
+        {
+          "q": "What was the name of the first artificial satellite, launched in 1957?",
+          "a": "Sputnik",
+          "accept": [
+            "Sputnik 1"
+          ]
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Utah Inventors",
+    "q": "Philo T. Farnsworth, who grew up in Utah, is credited with inventing the first fully electronic version of what?",
+    "a": "Television",
+    "accept": [
+      "TV",
+      "Electronic television",
+      "The television"
+    ]
+  }
+}

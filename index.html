@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1424">
+<title>Confidence Trivia</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="player" id="app"></div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script src="common.js"></script>
+<script>
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+let code = (params.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+let net = null, V = null, conn = 'idle', lastKey = null, updater = null, errorMsg = null;
+let drafts = {};          // per-question draft {text, wager}
+let timerEnd = null, tick = null;
+
+const teamKey = () => 'cptrivia-team-' + code;
+// Real phones: localStorage survives the browser being closed. Local test mode: per-tab, so several tabs = several teams.
+const store = LOCAL_MODE ? sessionStorage : localStorage;
+const myTeamId = () => store.getItem(teamKey());
+
+function connect() {
+  if (net) net.close();
+  net = createPlayerTransport(code, {
+    onStatus: (s) => { conn = s; if (s === 'open') net.send({ t: 'hello', teamId: myTeamId() }); render(); },
+    onMessage: (m) => {
+      if (!m || m.t !== 'state') return;
+      V = m;
+      if (m.error) { errorMsg = m.error; setTimeout(() => { if (errorMsg === m.error) { errorMsg = null; render(); } }, 4000); }
+      timerEnd = m.timeLeft != null ? Date.now() + m.timeLeft * 1000 : null;
+      render();
+    },
+  });
+}
+function send(m) { if (!net || !net.send(m)) { errorMsg = 'Not connected — retrying…'; render(); } }
+
+function secsLeft() { return timerEnd ? Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000)) : null; }
+function startTick() {
+  clearInterval(tick);
+  if (!timerEnd) return;
+  tick = setInterval(() => {
+    const el = document.getElementById('ptimer'); const s = secsLeft();
+    if (el) { el.textContent = s + 's'; el.classList.toggle('low', s <= 5); }
+    if (s <= 0) clearInterval(tick);
+  }, 250);
+}
+
+// --------------- Screens ---------------
+function topBar() {
+  if (!V || !V.me) return h('div', { class: 'top' }, h('div', { class: 'team' }, 'Confidence Trivia'), h('div', { class: 'muted' }, code ? 'Room ' + code : ''));
+  return h('div', { class: 'top' },
+    h('div', null, h('div', { class: 'team' }, V.me.name),
+      h('a', { href: '#', class: 'muted', style: 'font-size:13px', onclick: (e) => { e.preventDefault(); if (confirm('Switch teams?')) { store.removeItem(teamKey()); send({ t: 'leave' }); V.me = null; lastKey = null; render(); } } }, 'switch team')),
+    h('div', { class: 'score' }, V.me.score + ' pts'));
+}
+
+function banners() {
+  const out = [];
+  if (conn === 'connecting' || conn === 'lost') out.push(h('div', { class: 'banner' }, conn === 'lost' ? 'Reconnecting…' : 'Connecting…'));
+  if (conn === 'nohost') out.push(h('div', { class: 'banner err' }, `Can't find room ${code}. Check the code on the TV.`));
+  if (errorMsg) out.push(h('div', { class: 'banner err' }, errorMsg));
+  return out;
+}
+
+function screenKey() {
+  if (!code) return 'code';
+  if (!V) return 'wait-conn';
+  if (!V.me) return 'join';
+  const r = V.round ? V.round.category + V.round.qNum : '';
+  return [V.phase, r, V.me.id].join('|');
+}
+
+function render() {
+  const key = screenKey();
+  const head = [...banners(), topBar()];
+  if (key === lastKey && updater) {
+    // Same screen: refresh header + dynamic parts without wiping what the user is typing.
+    const hb = document.getElementById('head'); hb.replaceChildren(...head);
+    updater(); startTick(); return;
+  }
+  lastKey = key; updater = null;
+  let body;
+  if (!code) body = codeScreen();
+  else if (!V) body = h('div', { class: 'center' }, h('div', { class: 'muted' }, 'Connecting to room ' + code + '…'));
+  else if (!V.me) body = joinScreen();
+  else body = ({
+    lobby: lobbyScreen, pick: tvScreen, roundIntro: roundIntroScreen, question: questionScreen,
+    reveal: revealScreen, roundEnd: roundEndScreen, finalIntro: finalWagerScreen,
+    finalQuestion: finalQuestionScreen, finalReveal: finalRevealScreen, gameOver: gameOverScreen,
+  }[V.phase] || tvScreen)();
+  app.replaceChildren(h('div', { id: 'head', class: 'stack' }, head), body);
+  startTick();
+}
+
+function codeScreen() {
+  const inp = h('input', { placeholder: 'ABCD', maxlength: 4, autocapitalize: 'characters', autocomplete: 'off', style: 'font-size:32px;text-align:center;letter-spacing:.3em;text-transform:uppercase' });
+  const goBtn = () => {
+    const c = inp.value.toUpperCase().replace(/[^A-Z]/g, '');
+    if (c.length !== 4) return;
+    code = c; history.replaceState(null, '', '?room=' + c + (LOCAL_MODE ? '&local=1' : '')); lastKey = null; connect(); render();
+  };
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') goBtn(); });
+  setTimeout(() => inp.focus(), 50);
+  return h('div', { class: 'stack', style: 'margin-top:40px' }, h('h1', null, 'Join a game'), h('div', { class: 'muted' }, 'Enter the room code on the TV'), inp, h('button', { class: 'primary', onclick: goBtn }, 'Join'));
+}
+
+function joinScreen() {
+  const inp = h('input', { placeholder: 'Team name', maxlength: 24, autocomplete: 'off' });
+  const create = () => {
+    const name = inp.value.trim(); if (!name) return;
+    const id = uid(); store.setItem(teamKey(), id);
+    send({ t: 'join', teamId: id, name }); lastKey = null;
+  };
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') create(); });
+  const others = h('div', { class: 'stack' });
+  updater = () => others.replaceChildren(...(V.teams.length ? [h('div', { class: 'eyebrow', style: 'margin-top:20px' }, 'Or join a teammate'),
+    h('div', { class: 'teamlist' }, V.teams.map((t) => h('button', { onclick: () => {
+      store.setItem(teamKey(), t.id); send({ t: 'join', teamId: t.id }); lastKey = null;
+    } }, t.name)))] : []));
+  updater();
+  return h('div', { class: 'stack', style: 'margin-top:16px' },
+    h('h1', null, 'Create your team'), inp, h('button', { class: 'primary', onclick: create }, 'Create team'), others);
+}
+
+function lobbyScreen() {
+  return h('div', { class: 'center' }, h('div', { class: 'big' }, '✓'), h('h2', null, "You're in!"),
+    h('div', { class: 'muted' }, 'Waiting for the host to start…'),
+    h('div', { class: 'muted', id: 'teamcount' }, V.teams.length + ' teams joined'));
+}
+function tvScreen() {
+  return h('div', { class: 'center' }, h('h2', null, '👀 Look at the TV'),
+    V.phase === 'pick' ? h('div', { class: 'muted' }, 'Choosing the next category…') : null);
+}
+function roundIntroScreen() {
+  return h('div', { class: 'center' },
+    h('div', { class: 'eyebrow' }, `Round ${V.round.num} of ${V.round.total}`),
+    h('div', { class: 'big' }, V.round.category),
+    h('div', { class: 'muted' }, `Use each number 1–${V.round.qCount} once. Get it right, get that many points.`));
+}
+
+function questionScreen() {
+  const dk = V.round.category + V.round.qNum;
+  const d = drafts[dk] = drafts[dk] || { text: V.mine ? V.mine.text : '', wager: V.mine ? V.mine.wager : null };
+  const input = h('input', { placeholder: 'Your answer', maxlength: 120, autocomplete: 'off', autocapitalize: 'sentences', enterkeyhint: 'done', value: d.text });
+  input.addEventListener('input', () => { d.text = input.value; refresh(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+  const numsBox = h('div', { class: 'nums' });
+  const status = h('div');
+  const submit = h('button', { class: 'primary', onclick: () => {
+    if (!d.text.trim()) { errorMsg = 'Type an answer'; render(); return; }
+    if (!d.wager) { errorMsg = 'Pick a confidence number'; render(); return; }
+    send({ t: 'answer', text: d.text.trim(), wager: d.wager });
+  } });
+  function refresh() {
+    const mine = V.mine;
+    const usedSet = new Set(V.nums.filter((x) => x.used).map((x) => x.n));
+    if (d.wager && usedSet.has(d.wager)) d.wager = null;
+    numsBox.replaceChildren(...V.nums.map((x) => h('button', {
+      class: (x.used ? 'used' : '') + (d.wager === x.n ? ' sel' : ''), disabled: x.used,
+      onclick: () => { d.wager = x.n; refresh(); },
+    }, x.n)));
+    const same = mine && mine.text === d.text.trim() && mine.wager === d.wager;
+    submit.textContent = same ? '✓ Locked in' : (mine ? 'Update answer' : 'Submit');
+    submit.disabled = !!same;
+    status.replaceChildren(mine ? h('div', { class: 'locked' }, 'Submitted: ', h('b', null, '“' + mine.text + '”'), ' for ', h('b', { class: 'gold' }, mine.wager),
+      h('div', { class: 'muted', style: 'font-size:14px' }, 'You can change it until the answer is revealed.')) : '');
+  }
+  updater = refresh;
+  refresh();
+  return h('div', { class: 'stack' },
+    h('div', { class: 'row', style: 'justify-content:space-between' },
+      h('div', { class: 'eyebrow' }, `${V.round.category} · ${V.round.qNum}/${V.round.qCount}`),
+      timerEnd ? h('div', { class: 'ptimer', id: 'ptimer' }, secsLeft() + 's') : null),
+    h('h2', null, V.question), input,
+    h('div', { class: 'eyebrow' }, 'Confidence'), numsBox, submit, status);
+}
+
+function revealScreen() {
+  const r = V.result;
+  return h('div', { class: 'center' },
+    r ? h('div', { class: 'big ' + (r.correct ? 'good' : 'bad') }, r.correct ? '✓ +' + r.wager : '✗ Nope') : h('div', { class: 'big muted' }, 'No answer'),
+    r ? h('div', null, 'You said ', h('b', null, '“' + r.text + '”'), r.correct ? '' : ' (' + r.wager + ' pts on the line)') : null,
+    h('div', { class: 'eyebrow', style: 'margin-top:12px' }, 'Answer'), h('h2', { class: 'gold' }, V.answer));
+}
+function standingsEl() {
+  return h('div', { class: 'standings', style: 'width:100%' }, V.standings.map((t, i) =>
+    h('div', { class: 'line' + (V.me && t.id === V.me.id ? ' me' : '') }, h('span', null, `${i + 1}. ${t.name}`), h('b', null, t.score))));
+}
+function roundEndScreen() {
+  return h('div', { class: 'center' }, h('div', { class: 'eyebrow' }, 'Round over'),
+    h('div', { class: 'big gold' }, '+' + (V.roundPts || 0)), h('div', { class: 'muted' }, 'this round'), standingsEl());
+}
+
+function finalWagerScreen() {
+  const f = V.final;
+  const inp = h('input', { type: 'number', inputmode: 'numeric', min: 0, max: f.max, placeholder: '0–' + f.max, value: f.wager ?? '', style: 'font-size:28px;text-align:center' });
+  const status = h('div');
+  const submit = h('button', { class: 'primary', onclick: () => {
+    const w = Math.floor(Number(inp.value));
+    if (inp.value === '' || !(w >= 0 && w <= f.max)) { errorMsg = `Wager 0–${f.max}`; render(); return; }
+    send({ t: 'finalWager', wager: w });
+  } }, 'Lock wager');
+  updater = () => { status.replaceChildren(V.final.wager != null ? h('div', { class: 'locked' }, 'Wager locked: ', h('b', { class: 'gold' }, V.final.wager), h('div', { class: 'muted', style: 'font-size:14px' }, 'You can change it until the question is shown.')) : ''); };
+  updater();
+  return h('div', { class: 'stack' },
+    h('div', { class: 'eyebrow' }, 'Final question'), h('div', { class: 'big' }, f.category),
+    h('div', { class: 'muted' }, `You have ${V.me.score} points. Wager anything from 0 to ${f.max}. Get it wrong and you lose it.`),
+    inp, h('div', { class: 'row' },
+      h('button', { onclick: () => { inp.value = 0; } }, '0'),
+      h('button', { onclick: () => { inp.value = Math.floor(f.max / 2); } }, 'Half'),
+      h('button', { onclick: () => { inp.value = f.max; } }, 'All in')),
+    submit, status);
+}
+
+function finalQuestionScreen() {
+  const f = V.final;
+  const d = drafts.final = drafts.final || { text: f.answer || '' };
+  const input = h('input', { placeholder: 'Your answer', maxlength: 120, autocomplete: 'off', value: d.text });
+  const status = h('div');
+  const submit = h('button', { class: 'primary', onclick: () => {
+    if (!d.text.trim()) { errorMsg = 'Type an answer'; render(); return; }
+    send({ t: 'finalAnswer', text: d.text.trim() });
+  } });
+  function refresh() {
+    const a = V.final.answer, same = a && a === d.text.trim();
+    submit.textContent = same ? '✓ Locked in' : (a ? 'Update answer' : 'Submit'); submit.disabled = !!same;
+    status.replaceChildren(a ? h('div', { class: 'locked' }, 'Submitted: ', h('b', null, '“' + a + '”')) : '');
+  }
+  input.addEventListener('input', () => { d.text = input.value; refresh(); });
+  updater = refresh; refresh();
+  return h('div', { class: 'stack' },
+    h('div', { class: 'row', style: 'justify-content:space-between' }, h('div', { class: 'eyebrow' }, 'Final · ' + f.category),
+      timerEnd ? h('div', { class: 'ptimer', id: 'ptimer' }, secsLeft() + 's') : null),
+    h('h2', null, V.question), h('div', { class: 'muted' }, 'Your wager: ', h('b', { class: 'gold' }, f.wager ?? 0)),
+    input, submit, status);
+}
+
+function finalRevealScreen() {
+  const box = h('div', { class: 'center' });
+  updater = () => {
+    const r = V.final.result;
+    box.replaceChildren(
+      r ? h('div', { class: 'big ' + (r.correct ? 'good' : 'bad') }, (r.correct ? '✓ +' : '✗ −') + (V.final.wager || 0)) : h('h2', null, '👀 Watch the TV…'),
+      V.answer ? [h('div', { class: 'eyebrow' }, 'Answer'), h('h2', { class: 'gold' }, V.answer)] : null,
+      r ? h('div', { class: 'muted' }, 'Score: ' + V.me.score) : null);
+  };
+  updater();
+  return box;
+}
+function gameOverScreen() {
+  const i = V.standings.findIndex((t) => t.id === V.me.id);
+  const place = i + 1, top = V.standings[0] && V.standings[0].score;
+  const won = V.standings[i] && V.standings[i].score === top;
+  return h('div', { class: 'center' }, h('div', { class: 'big' }, won ? '🏆' : '#' + place),
+    h('h2', null, won ? 'You win!' : `You finished #${place}`), standingsEl());
+}
+
+if (code) connect();
+render();
+</script>
+</body>
+</html>
