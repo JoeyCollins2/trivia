@@ -10,7 +10,7 @@
 <body>
 <div class="player" id="app"></div>
 
-<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/mqtt.min.js"></script>
 <script src="common.js"></script>
 <script>
 const app = document.getElementById('app');
@@ -103,7 +103,7 @@ function codeScreen() {
   const goBtn = () => {
     const c = inp.value.toUpperCase().replace(/[^A-Z]/g, '');
     if (c.length !== 4) return;
-    code = c; history.replaceState(null, '', '?room=' + c + (LOCAL_MODE ? '&local=1' : '')); lastKey = null; connect(); render();
+    code = c; const qp = new URLSearchParams(location.search); qp.set('room', c); history.replaceState(null, '', '?' + qp.toString()); lastKey = null; connect(); render();
   };
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') goBtn(); });
   setTimeout(() => inp.focus(), 50);

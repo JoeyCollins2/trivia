@@ -1,130 +1,213 @@
 {
-  "title": "Game Night #2 (Hard Mode + Pop Culture)",
+  "title": "Thanksgiving Game Night",
   "rounds": [
     {
-      "category": "Disney",
+      "category": "Thanksgiving",
       "questions": [
         {
-          "q": "In The Little Mermaid, what does Ariel call a fork?",
-          "a": "Dinglehopper",
+          "q": "Which president made Thanksgiving a national holiday in 1863?",
+          "a": "Abraham Lincoln",
           "accept": [
-            "A dinglehopper"
+            "Lincoln"
           ]
         },
         {
-          "q": "What is the name of Rapunzel's chameleon in Tangled?",
-          "a": "Pascal"
-        },
-        {
-          "q": "What is the name of Moana's rooster?",
-          "a": "Heihei",
+          "q": "Which president moved Thanksgiving a week earlier in 1939, earning the nickname \"Franksgiving\"?",
+          "a": "Franklin D. Roosevelt",
           "accept": [
-            "Hei Hei"
+            "Franklin Roosevelt",
+            "FDR",
+            "Roosevelt"
           ]
         },
         {
-          "q": "In Beauty and the Beast, what is the name of the teapot?",
-          "a": "Mrs. Potts",
+          "q": "What was the name of the ship that brought the Pilgrims to America in 1620?",
+          "a": "Mayflower",
           "accept": [
-            "Mrs Potts",
-            "Potts"
+            "The Mayflower"
           ]
         },
         {
-          "q": "What is the family's last name in Encanto?",
-          "a": "Madrigal",
+          "q": "Which Native American people shared the 1621 harvest feast with the Pilgrims?",
+          "a": "Wampanoag",
           "accept": [
-            "The Madrigals",
-            "Madrigals"
+            "Wampanoags",
+            "The Wampanoag"
           ]
         },
         {
-          "q": "What is the name of Mulan's little dragon sidekick?",
-          "a": "Mushu"
+          "q": "Which U.S. state raises the most turkeys?",
+          "a": "Minnesota"
         },
         {
-          "q": "In The Princess and the Frog, what does Tiana dream of opening?",
-          "a": "A restaurant",
+          "q": "What is a male turkey called?",
+          "a": "Tom",
           "accept": [
-            "Restaurant",
-            "Her own restaurant"
+            "Tom turkey",
+            "Gobbler"
           ]
         },
         {
-          "q": "What is the name of the evil fairy in Sleeping Beauty?",
-          "a": "Maleficent"
+          "q": "What is the fleshy flap that hangs over a turkey's beak called?",
+          "a": "Snood"
         },
         {
-          "q": "What is the name of the crab who looks after Ariel?",
-          "a": "Sebastian"
+          "q": "In what year was the first Macy's Thanksgiving Day Parade?",
+          "a": "1924"
         },
         {
-          "q": "In Frozen, what is the name of Kristoff's reindeer?",
-          "a": "Sven"
+          "q": "Which writer of \"Mary Had a Little Lamb\" campaigned for 17 years to make Thanksgiving a national holiday?",
+          "a": "Sarah Josepha Hale",
+          "accept": [
+            "Sarah Hale",
+            "Hale"
+          ]
+        },
+        {
+          "q": "Which country celebrates its Thanksgiving on the second Monday in October?",
+          "a": "Canada"
         }
       ]
     },
     {
-      "category": "Rom-Coms & Chick Flicks",
+      "category": "Thanksgiving Sports",
       "questions": [
         {
-          "q": "In Mean Girls, what color do the Plastics wear on Wednesdays?",
-          "a": "Pink"
-        },
-        {
-          "q": "Who plays Patrick Verona in 10 Things I Hate About You?",
-          "a": "Heath Ledger",
+          "q": "Two NFL teams host a game every Thanksgiving. Name either one.",
+          "a": "Detroit Lions",
           "accept": [
-            "Ledger"
+            "Lions",
+            "Detroit",
+            "Dallas Cowboys",
+            "Cowboys",
+            "Dallas"
           ]
         },
         {
-          "q": "In The Devil Wears Prada, what is the name of the magazine Andy works for?",
-          "a": "Runway",
+          "q": "The Detroit Lions have played on Thanksgiving almost every year since what year?",
+          "a": "1934"
+        },
+        {
+          "q": "The Iron Bowl, played Thanksgiving weekend, is Alabama versus which school?",
+          "a": "Auburn"
+        },
+        {
+          "q": "The Egg Bowl, played Thanksgiving weekend, is Ole Miss versus which school?",
+          "a": "Mississippi State",
           "accept": [
-            "Runway Magazine"
+            "Miss State",
+            "Mississippi St"
           ]
         },
         {
-          "q": "In Legally Blonde, what is the name of Elle Woods' chihuahua?",
-          "a": "Bruiser",
+          "q": "Which three-bird dish did John Madden make famous during his Thanksgiving broadcasts?",
+          "a": "Turducken"
+        },
+        {
+          "q": "Which Steelers running back was at the center of the botched 1998 Thanksgiving coin toss?",
+          "a": "Jerome Bettis",
           "accept": [
-            "Bruiser Woods"
+            "Bettis",
+            "The Bus"
           ]
         },
         {
-          "q": "What is the main character's first name in Clueless?",
-          "a": "Cher",
+          "q": "Which Cowboys defensive lineman slid into a blocked field goal in the snow on Thanksgiving 1993, handing Miami the win?",
+          "a": "Leon Lett",
           "accept": [
-            "Cher Horowitz"
+            "Lett"
           ]
         },
         {
-          "q": "Which actress plays Andie in How to Lose a Guy in 10 Days?",
-          "a": "Kate Hudson",
+          "q": "The NFL added a third Thanksgiving game, played at night, starting in what year?",
+          "a": "2006"
+        },
+        {
+          "q": "Since 2023, the NFL's Black Friday game has streamed on which service?",
+          "a": "Amazon Prime Video",
           "accept": [
-            "Hudson"
+            "Prime Video",
+            "Amazon Prime",
+            "Amazon",
+            "Prime"
           ]
         },
         {
-          "q": "In 13 Going on 30, which Michael Jackson song gets the whole party dancing?",
-          "a": "Thriller"
-        },
-        {
-          "q": "Who plays Elizabeth Bennet in the 2005 Pride & Prejudice?",
-          "a": "Keira Knightley",
+          "q": "A \"Turkey Trot\" on Thanksgiving morning is what kind of event?",
+          "a": "A running race",
           "accept": [
-            "Kiera Knightley",
-            "Knightley"
+            "Race",
+            "Running race",
+            "Fun run",
+            "5K",
+            "Footrace",
+            "A race",
+            "Run"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Black Friday",
+      "questions": [
+        {
+          "q": "Police in which U.S. city started calling the day after Thanksgiving \"Black Friday\" because of the traffic chaos?",
+          "a": "Philadelphia",
+          "accept": [
+            "Philly"
           ]
         },
         {
-          "q": "In The Proposal, which state is Andrew's family from?",
-          "a": "Alaska"
+          "q": "What is the Monday after Thanksgiving called, when online stores run big deals?",
+          "a": "Cyber Monday"
         },
         {
-          "q": "Every song in Mamma Mia! was written by which band?",
-          "a": "ABBA"
+          "q": "What is the name of the Tuesday after Thanksgiving that's dedicated to donating to charity?",
+          "a": "Giving Tuesday",
+          "accept": [
+            "GivingTuesday"
+          ]
+        },
+        {
+          "q": "Which shopping day, between Black Friday and Cyber Monday, encourages people to shop at local stores?",
+          "a": "Small Business Saturday"
+        },
+        {
+          "q": "Which credit card company launched Small Business Saturday in 2010?",
+          "a": "American Express",
+          "accept": [
+            "Amex"
+          ]
+        },
+        {
+          "q": "Which outdoor retailer famously closes on Black Friday and tells everyone to #OptOutside?",
+          "a": "REI"
+        },
+        {
+          "q": "In which 1996 movie does Arnold Schwarzenegger desperately hunt for a Turbo-Man toy?",
+          "a": "Jingle All the Way"
+        },
+        {
+          "q": "Which giggling red Muppet toy caused shopping stampedes in 1996?",
+          "a": "Tickle Me Elmo",
+          "accept": [
+            "Elmo"
+          ]
+        },
+        {
+          "q": "Which dolls, sold with \"adoption papers,\" caused store riots during the 1983 holiday season?",
+          "a": "Cabbage Patch Kids",
+          "accept": [
+            "Cabbage Patch",
+            "Cabbage Patch dolls"
+          ]
+        },
+        {
+          "q": "Which retailer, founded in Bentonville, Arkansas, is the largest in the United States?",
+          "a": "Walmart",
+          "accept": [
+            "Wal-Mart"
+          ]
         }
       ]
     },
@@ -132,495 +215,73 @@
       "category": "Geography",
       "questions": [
         {
-          "q": "Which country's coastline touches both the Atlantic and Indian Oceans?",
-          "a": "South Africa"
+          "q": "What is the largest island in the world (not counting continents)?",
+          "a": "Greenland"
         },
         {
-          "q": "What is the capital of Kazakhstan?",
-          "a": "Astana",
-          "accept": [
-            "Nur-Sultan",
-            "Nur Sultan"
-          ]
-        },
-        {
-          "q": "Lake Titicaca sits on the border of Peru and which other country?",
-          "a": "Bolivia"
-        },
-        {
-          "q": "Counting its overseas territories, which country has the most time zones?",
-          "a": "France"
-        },
-        {
-          "q": "Which is the only country whose national flag isn't a rectangle or square?",
-          "a": "Nepal"
-        },
-        {
-          "q": "Name either of the two countries completely surrounded by Italy.",
-          "a": "San Marino",
-          "accept": [
-            "Vatican City",
-            "Vatican",
-            "Holy See"
-          ]
-        },
-        {
-          "q": "Which river flows through Baghdad?",
-          "a": "Tigris",
-          "accept": [
-            "Tigris River"
-          ]
-        },
-        {
-          "q": "Which country has more ancient pyramids than any other?",
-          "a": "Sudan"
-        },
-        {
-          "q": "What is the deepest lake in the world?",
-          "a": "Lake Baikal",
-          "accept": [
-            "Baikal"
-          ]
-        },
-        {
-          "q": "Which U.S. state borders only one other state?",
-          "a": "Maine"
-        }
-      ]
-    },
-    {
-      "category": "Reality TV",
-      "questions": [
-        {
-          "q": "Which dating show puts singles in a villa where they have to \"couple up\"?",
-          "a": "Love Island"
-        },
-        {
-          "q": "On The Bachelor, what does the lead hand out at each ceremony?",
-          "a": "A rose",
-          "accept": [
-            "Rose",
-            "Roses"
-          ]
-        },
-        {
-          "q": "What was the name of the Kardashians' original reality show on E!?",
-          "a": "Keeping Up with the Kardashians",
-          "accept": [
-            "KUWTK",
-            "Keeping Up"
-          ]
-        },
-        {
-          "q": "Which real estate brokerage is the setting of Selling Sunset?",
-          "a": "The Oppenheim Group",
-          "accept": [
-            "Oppenheim Group",
-            "Oppenheim"
-          ]
-        },
-        {
-          "q": "On The Great British Bake Off, which judge is famous for his handshake?",
-          "a": "Paul Hollywood",
-          "accept": [
-            "Hollywood",
-            "Paul"
-          ]
-        },
-        {
-          "q": "Which Hulu reality show follows a group of Utah \"MomTok\" influencers?",
-          "a": "The Secret Lives of Mormon Wives",
-          "accept": [
-            "Secret Lives of Mormon Wives",
-            "Mormon Wives"
-          ]
-        },
-        {
-          "q": "On Love Is Blind, what are the rooms called where couples date without seeing each other?",
-          "a": "The pods",
-          "accept": [
-            "Pods",
-            "Pod"
-          ]
-        },
-        {
-          "q": "Bethenny Frankel got her start on The Real Housewives of which city?",
-          "a": "New York",
-          "accept": [
-            "New York City",
-            "NYC",
-            "NY"
-          ]
-        },
-        {
-          "q": "Which singing show originally had Simon Cowell, Paula Abdul and Randy Jackson as judges?",
-          "a": "American Idol"
-        },
-        {
-          "q": "Which reality show is famous for the line \"The tribe has spoken\"?",
-          "a": "Survivor"
-        }
-      ]
-    },
-    {
-      "category": "Pop Divas",
-      "questions": [
-        {
-          "q": "What is Taylor Swift's lucky number?",
-          "a": "13",
-          "accept": [
-            "thirteen"
-          ]
-        },
-        {
-          "q": "What was the name of Taylor Swift's record-breaking tour that ended in 2024?",
-          "a": "The Eras Tour",
-          "accept": [
-            "Eras Tour",
-            "Eras"
-          ]
-        },
-        {
-          "q": "Which singer's fans are known as the \"Beyhive\"?",
-          "a": "Beyoncé",
-          "accept": [
-            "Beyonce"
-          ]
-        },
-        {
-          "q": "What is the name of Olivia Rodrigo's debut album?",
-          "a": "Sour"
-        },
-        {
-          "q": "Sabrina Carpenter's 2024 summer hit is named after which coffee drink?",
-          "a": "Espresso"
-        },
-        {
-          "q": "Which singer released \"Flowers\" in 2023?",
-          "a": "Miley Cyrus",
-          "accept": [
-            "Miley"
-          ]
-        },
-        {
-          "q": "Ariana Grande plays Glinda in which 2024 movie?",
-          "a": "Wicked"
-        },
-        {
-          "q": "Which singer's real name is Robyn Fenty?",
-          "a": "Rihanna"
-        },
-        {
-          "q": "Who sings \"Good Luck, Babe!\" and \"HOT TO GO!\"?",
-          "a": "Chappell Roan",
-          "accept": [
-            "Chappell"
-          ]
-        },
-        {
-          "q": "What is Lady Gaga's real first name?",
-          "a": "Stefani",
-          "accept": [
-            "Stephanie"
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Sports",
-      "questions": [
-        {
-          "q": "In golf, what is it called when you finish a hole three under par?",
-          "a": "Albatross",
-          "accept": [
-            "Double eagle"
-          ]
-        },
-        {
-          "q": "Which Utah Jazz legend was nicknamed \"The Mailman\"?",
-          "a": "Karl Malone",
-          "accept": [
-            "Malone"
-          ]
-        },
-        {
-          "q": "Which BYU quarterback won the Heisman Trophy in 1990?",
-          "a": "Ty Detmer",
-          "accept": [
-            "Detmer"
-          ]
-        },
-        {
-          "q": "Which NFL franchise has played in the most Super Bowls?",
-          "a": "New England Patriots",
-          "accept": [
-            "Patriots",
-            "New England"
-          ]
-        },
-        {
-          "q": "Who is the NBA's all-time leading scorer?",
-          "a": "LeBron James",
-          "accept": [
-            "LeBron",
-            "Lebron"
-          ]
-        },
-        {
-          "q": "Which boxer was born Cassius Clay?",
-          "a": "Muhammad Ali",
-          "accept": [
-            "Ali"
-          ]
-        },
-        {
-          "q": "In bowling, what is three strikes in a row called?",
-          "a": "Turkey"
-        },
-        {
-          "q": "The Larry O'Brien Trophy is awarded to the champion of which league?",
-          "a": "NBA",
-          "accept": [
-            "National Basketball Association",
-            "Basketball"
-          ]
-        },
-        {
-          "q": "In curling, what is the circular target area called?",
-          "a": "The house",
-          "accept": [
-            "House"
-          ]
-        },
-        {
-          "q": "Which country has won the most Olympic gold medals in men's ice hockey?",
+          "q": "Which country has the longest coastline in the world?",
           "a": "Canada"
-        }
-      ]
-    },
-    {
-      "category": "TV Shows",
-      "questions": [
-        {
-          "q": "In The Office, what is the name of Angela's cat that Dwight puts in the freezer?",
-          "a": "Sprinkles"
         },
         {
-          "q": "What is Rory's real first name in Gilmore Girls?",
-          "a": "Lorelai",
+          "q": "What is the capital of New Zealand?",
+          "a": "Wellington"
+        },
+        {
+          "q": "What is the world's tallest waterfall?",
+          "a": "Angel Falls",
           "accept": [
-            "Lorelei"
+            "Angel",
+            "Salto Angel"
           ]
         },
         {
-          "q": "In Grey's Anatomy, what is Derek Shepherd's nickname?",
-          "a": "McDreamy",
+          "q": "Which African country used to be called Abyssinia?",
+          "a": "Ethiopia"
+        },
+        {
+          "q": "What is the least populous U.S. state capital?",
+          "a": "Montpelier",
           "accept": [
-            "Mc Dreamy"
+            "Montpelier Vermont"
           ]
         },
         {
-          "q": "In New Girl, what is the name of the gang's chaotic drinking game?",
-          "a": "True American"
-        },
-        {
-          "q": "In Friends, what is Phoebe's most famous song?",
-          "a": "Smelly Cat"
-        },
-        {
-          "q": "In Gossip Girl, who is revealed to be Gossip Girl?",
-          "a": "Dan Humphrey",
+          "q": "Which is the only sea with no coastline?",
+          "a": "Sargasso Sea",
           "accept": [
-            "Dan",
-            "Lonely Boy"
+            "Sargasso"
           ]
         },
         {
-          "q": "In Bridgerton, what is the pen name of the anonymous gossip writer?",
-          "a": "Lady Whistledown",
+          "q": "What desert in Chile is one of the driest places on Earth?",
+          "a": "Atacama",
           "accept": [
-            "Whistledown"
+            "Atacama Desert"
           ]
         },
         {
-          "q": "What is the name of the bar in How I Met Your Mother?",
-          "a": "MacLaren's",
+          "q": "Which country is completely surrounded by South Africa?",
+          "a": "Lesotho"
+        },
+        {
+          "q": "Istanbul is split between Europe and Asia by which strait?",
+          "a": "Bosphorus",
           "accept": [
-            "MacLarens",
-            "McLaren's",
-            "MacLaren's Pub"
-          ]
-        },
-        {
-          "q": "Which TV show is set in the fictional town of Pawnee, Indiana?",
-          "a": "Parks and Recreation",
-          "accept": [
-            "Parks and Rec",
-            "Parks & Rec"
-          ]
-        },
-        {
-          "q": "In Breaking Bad, what is the name of Gus Fring's fried-chicken chain?",
-          "a": "Los Pollos Hermanos",
-          "accept": [
-            "Pollos Hermanos"
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Celebs & Internet",
-      "questions": [
-        {
-          "q": "Which NFL player did Taylor Swift get engaged to in 2025?",
-          "a": "Travis Kelce",
-          "accept": [
-            "Kelce",
-            "Travis"
-          ]
-        },
-        {
-          "q": "Which singer and actress founded the makeup brand Rare Beauty?",
-          "a": "Selena Gomez",
-          "accept": [
-            "Selena"
-          ]
-        },
-        {
-          "q": "Which Kardashian-Jenner started her beauty empire with lip kits?",
-          "a": "Kylie Jenner",
-          "accept": [
-            "Kylie"
-          ]
-        },
-        {
-          "q": "On TikTok, what does \"GRWM\" stand for?",
-          "a": "Get Ready With Me"
-        },
-        {
-          "q": "Which brand's 40-ounce tumbler became a viral must-have in 2023?",
-          "a": "Stanley",
-          "accept": [
-            "Stanley Cup",
-            "Stanley Quencher"
-          ]
-        },
-        {
-          "q": "The 2023 \"Barbenheimer\" double feature paired Barbie with which movie?",
-          "a": "Oppenheimer"
-        },
-        {
-          "q": "Which actress is married to Ryan Reynolds?",
-          "a": "Blake Lively",
-          "accept": [
-            "Blake"
-          ]
-        },
-        {
-          "q": "On which dating app do women have to send the first message?",
-          "a": "Bumble"
-        },
-        {
-          "q": "Which app's logo is a white ghost on a yellow background?",
-          "a": "Snapchat",
-          "accept": [
-            "Snap"
-          ]
-        },
-        {
-          "q": "What was the name of Google's social network that shut down in 2019?",
-          "a": "Google+",
-          "accept": [
-            "Google Plus"
-          ]
-        }
-      ]
-    },
-    {
-      "category": "History",
-      "questions": [
-        {
-          "q": "The shortest war in recorded history (about 40 minutes, in 1896) was between Britain and what country?",
-          "a": "Zanzibar"
-        },
-        {
-          "q": "Who was U.S. president during the War of 1812?",
-          "a": "James Madison",
-          "accept": [
-            "Madison"
-          ]
-        },
-        {
-          "q": "What city was the capital of the Byzantine Empire?",
-          "a": "Constantinople",
-          "accept": [
-            "Istanbul",
-            "Byzantium"
-          ]
-        },
-        {
-          "q": "In what year did the Chernobyl nuclear disaster happen?",
-          "a": "1986"
-        },
-        {
-          "q": "In 1893, which country became the first to give women the right to vote in national elections?",
-          "a": "New Zealand"
-        },
-        {
-          "q": "The Golden Spike was driven at Promontory Summit, Utah, in 1869 to complete what?",
-          "a": "Transcontinental railroad",
-          "accept": [
-            "The transcontinental railroad",
-            "First transcontinental railroad",
-            "Railroad",
-            "The railroad"
-          ]
-        },
-        {
-          "q": "Howard Carter found which pharaoh's nearly untouched tomb in 1922?",
-          "a": "Tutankhamun",
-          "accept": [
-            "King Tut",
-            "Tut",
-            "Tutankhamen"
-          ]
-        },
-        {
-          "q": "Who was the first Roman emperor?",
-          "a": "Augustus",
-          "accept": [
-            "Octavian",
-            "Caesar Augustus",
-            "Augustus Caesar"
-          ]
-        },
-        {
-          "q": "The Rosetta Stone was the key to decoding which writing system?",
-          "a": "Egyptian hieroglyphs",
-          "accept": [
-            "Hieroglyphs",
-            "Hieroglyphics",
-            "Egyptian hieroglyphics"
-          ]
-        },
-        {
-          "q": "What was the name of the first artificial satellite, launched in 1957?",
-          "a": "Sputnik",
-          "accept": [
-            "Sputnik 1"
+            "Bosporus",
+            "Bosphorus Strait"
           ]
         }
       ]
     }
   ],
   "final": {
-    "category": "Utah Inventors",
-    "q": "Philo T. Farnsworth, who grew up in Utah, is credited with inventing the first fully electronic version of what?",
-    "a": "Television",
+    "category": "The First Thanksgiving",
+    "q": "The 1621 harvest feast between the Pilgrims and the Wampanoag lasted how many days?",
+    "a": "3",
     "accept": [
-      "TV",
-      "Electronic television",
-      "The television"
+      "three",
+      "3 days",
+      "three days"
     ]
   }
 }

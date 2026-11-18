@@ -27,7 +27,7 @@
   </footer>
 </div>
 
-<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/mqtt.min.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="common.js"></script>
 <script>
@@ -118,7 +118,8 @@ function timeLeft() {
 }
 function joinUrl() {
   const base = location.href.split('?')[0].replace(/host\.html$/, '');
-  return base + '?room=' + S.code + (LOCAL_MODE ? '&local=1' : '');
+  const b = new URLSearchParams(location.search).get('broker');
+  return base + '?room=' + S.code + (LOCAL_MODE ? '&local=1' : '') + (b ? '&broker=' + encodeURIComponent(b) : '');
 }
 
 // ---------------- Networking ----------------

@@ -1,6 +1,6 @@
 # Confidence Trivia
 
-The TV shows the questions. Each team answers on their own phone. There's no server or database to run: the phones connect straight to the host laptop over WebRTC (PeerJS).
+The TV shows the questions. Each team answers on their own phone. There's no server or database to run: messages go through free public relay servers (EMQX and HiveMQ, both used at once for backup), so it works on Wi-Fi or cellular.
 
 ## Put it online (one time, about 5 minutes)
 It's a static site, so any free static host works. Pick one:

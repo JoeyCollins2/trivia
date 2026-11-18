@@ -1,8 +1,8 @@
 // Shared code for host + player screens.
-// Transport: PeerJS (WebRTC) by default, so no server/database is needed.
+// Transport: public MQTT relay over secure WebSockets (no server or account of our own needed).
 // Add ?local=1 to the URL to use BroadcastChannel instead (all tabs in one browser) for testing.
 
-const PEER_PREFIX = 'cptrivia-v1-';
+const PEER_PREFIX = 'cptrivia-v1-'; // BroadcastChannel name prefix for local test mode
 const LOCAL_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('local');
 
 function makeCode() {
@@ -16,59 +16,88 @@ function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
+// ---------- Relay (MQTT over secure WebSockets) ----------
+// Everyone connects out to public MQTT brokers, so it works on any Wi-Fi or cellular network.
+// We connect to two brokers at once and send through both; duplicates are dropped by id, stale ones by seq.
+const BROKERS = (() => {
+  const p = typeof location !== 'undefined' && new URLSearchParams(location.search).get('broker');
+  return p ? p.split(',') : ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
+})();
+const TOPIC = (code) => 'cptrivia/v2/' + code;
+let seqCounter = 0;
+const nextSeq = () => Date.now() * 1000 + (seqCounter = (seqCounter + 1) % 1000);
+
+function createRelay(name, subs, onMsg, onState, will) {
+  const seen = new Set(), seenQ = [], lastSeq = {};
+  const clients = BROKERS.map((url) => {
+    const c = mqtt.connect(url, {
+      clientId: 'cpt-' + name + '-' + Math.random().toString(36).slice(2, 8),
+      clean: true, keepalive: 20, reconnectPeriod: 2000, connectTimeout: 8000,
+      will: will ? { topic: will.topic, payload: JSON.stringify(will.msg), qos: 1 } : undefined,
+    });
+    c.on('connect', () => { c.subscribe(subs, { qos: 1 }); onState(); });
+    c.on('close', onState);
+    c.on('offline', onState);
+    c.on('error', () => {});
+    c.on('message', (topic, buf) => {
+      let m; try { m = JSON.parse(buf.toString()); } catch (e) { return; }
+      if (!m || !m.id || seen.has(m.id)) return;
+      seen.add(m.id); seenQ.push(m.id); if (seenQ.length > 2000) seen.delete(seenQ.shift());
+      if (m.kind === 'msg' && m.seq) {
+        const k = m.from || '?';
+        if (lastSeq[k] && m.seq <= lastSeq[k]) return; // older than something we already handled
+        lastSeq[k] = m.seq;
+      }
+      onMsg(topic, m);
+    });
+    return c;
+  });
+  return {
+    publish(topic, m) {
+      m.id = m.id || uid(); m.seq = nextSeq();
+      const s = JSON.stringify(m); let ok = false;
+      for (const c of clients) if (c.connected) { c.publish(topic, s, { qos: 1 }); ok = true; }
+      return ok;
+    },
+    connected() { return clients.some((c) => c.connected); },
+    end() { for (const c of clients) { try { c.end(true); } catch (e) {} } },
+  };
+}
+
 // ---------- Host transport ----------
 // handlers: { onMessage(connId, msg), onOpen(connId), onClose(connId), onStatus(text, ok) }
 function createHostTransport(code, handlers) {
   if (LOCAL_MODE) return localHost(code, handlers);
-  const conns = new Map();
-  let peer = null;
-  let destroyed = false;
-
-  function start(attempt = 0) {
-    peer = new Peer(PEER_PREFIX + code, { debug: 0 });
-    peer.on('open', () => handlers.onStatus && handlers.onStatus('Online', true));
-    peer.on('connection', (conn) => {
-      const id = uid();
-      conn.on('open', () => {
-        conns.set(id, conn);
-        handlers.onOpen && handlers.onOpen(id);
-      });
-      conn.on('data', (d) => handlers.onMessage(id, d));
-      const drop = () => {
-        if (conns.get(id) === conn) {
-          conns.delete(id);
-          handlers.onClose && handlers.onClose(id);
-        }
-      };
-      conn.on('close', drop);
-      conn.on('error', drop);
-    });
-    peer.on('disconnected', () => {
-      if (destroyed) return;
-      handlers.onStatus && handlers.onStatus('Reconnecting…', false);
-      setTimeout(() => { try { peer.reconnect(); } catch (e) {} }, 1000);
-    });
-    peer.on('error', (err) => {
-      if (destroyed) return;
-      if (err.type === 'unavailable-id') {
-        // Usually after a refresh: the old session hasn't timed out on the broker yet.
-        handlers.onStatus && handlers.onStatus('Reclaiming room code…', false);
-        try { peer.destroy(); } catch (e) {}
-        setTimeout(() => start(attempt + 1), Math.min(2000 + attempt * 1000, 8000));
-      } else if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(err.type)) {
-        handlers.onStatus && handlers.onStatus('Connection problem, retrying…', false);
-      }
-    });
-  }
-  start();
-
+  const T = TOPIC(code);
+  const conns = new Map(); // playerId -> last heard (ms)
+  let relay = null;
+  const status = () => {
+    if (!relay) return;
+    const ok = relay.connected();
+    handlers.onStatus && handlers.onStatus(ok ? 'Online' : 'Connecting…', ok);
+    if (ok) relay.publish(T + '/all', { from: 'host', kind: 'host-up' }); // players re-introduce themselves
+  };
+  relay = createRelay('h' + code, [T + '/host'], (topic, m) => {
+    const from = m.from; if (!from || from === 'host') return;
+    if (m.kind === 'bye') { if (conns.delete(from)) handlers.onClose && handlers.onClose(from); return; }
+    const isNew = !conns.has(from);
+    conns.set(from, Date.now());
+    if (m.kind === 'hello') {
+      relay.publish(T + '/p/' + from, { from: 'host', kind: 'welcome' });
+      handlers.onOpen && handlers.onOpen(from);
+      return;
+    }
+    if (isNew) handlers.onOpen && handlers.onOpen(from);
+    if (m.kind === 'msg') handlers.onMessage(from, m.payload);
+  }, () => setTimeout(status, 0));
+  const prune = setInterval(() => {
+    const now = Date.now();
+    for (const [id, t] of conns) if (now - t > 30000) { conns.delete(id); handlers.onClose && handlers.onClose(id); }
+  }, 5000);
   return {
-    send(connId, msg) {
-      const c = conns.get(connId);
-      if (c && c.open) { try { c.send(msg); } catch (e) {} }
-    },
+    send(connId, msg) { relay.publish(T + '/p/' + connId, { from: 'host', kind: 'msg', payload: msg }); },
     connIds() { return [...conns.keys()]; },
-    destroy() { destroyed = true; try { peer.destroy(); } catch (e) {} },
+    destroy() { clearInterval(prune); relay.end(); },
   };
 }
 
@@ -100,57 +129,33 @@ function localHost(code, handlers) {
 }
 
 // ---------- Player transport ----------
-// handlers: { onMessage(msg), onStatus(state) } state: 'connecting' | 'open' | 'lost'
+// handlers: { onMessage(msg), onStatus(state) } state: 'connecting' | 'open' | 'nohost'
 function createPlayerTransport(code, handlers) {
   if (LOCAL_MODE) return localPlayer(code, handlers);
-  let peer = null, conn = null, closed = false, retryTimer = null;
-
-  function connect() {
-    if (closed) return;
-    handlers.onStatus('connecting');
-    if (!peer || peer.destroyed) {
-      peer = new Peer({ debug: 0 });
-      peer.on('open', () => openConn());
-      peer.on('error', (err) => {
-        if (err.type === 'peer-unavailable') handlers.onStatus('nohost');
-        scheduleRetry();
-      });
-      peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
-    } else if (peer.open) {
-      openConn();
-    }
-  }
-  function openConn() {
-    conn = peer.connect(PEER_PREFIX + code, { reliable: true });
-    const thisConn = conn;
-    conn.on('open', () => handlers.onStatus('open'));
-    conn.on('data', (d) => handlers.onMessage(d));
-    conn.on('close', () => { if (conn === thisConn) { handlers.onStatus('lost'); scheduleRetry(); } });
-    conn.on('error', () => { if (conn === thisConn) { handlers.onStatus('lost'); scheduleRetry(); } });
-  }
-  function scheduleRetry() {
-    if (closed || retryTimer) return;
-    retryTimer = setTimeout(() => {
-      retryTimer = null;
-      if (conn && conn.open) return;
-      if (peer && (peer.destroyed || peer.disconnected)) { try { peer.destroy(); } catch (e) {} peer = null; }
-      connect();
-    }, 2500);
-  }
-  // Phones sleep / switch apps: reconnect when the page becomes visible again.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !(conn && conn.open)) {
-      if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
-      connect();
-    }
-  });
-  connect();
+  const T = TOPIC(code);
+  const me = 'p' + uid();
+  let open = false, tries = 0, relay = null;
+  const setOpen = () => { tries = 0; if (!open) { open = true; handlers.onStatus('open'); } };
+  const sayHello = () => relay && relay.publish(T + '/host', { from: me, kind: 'hello' });
+  const onState = () => {
+    if (!relay) return;
+    if (!relay.connected()) { if (open) { open = false; } handlers.onStatus('connecting'); }
+    else if (!open) sayHello();
+  };
+  handlers.onStatus('connecting');
+  relay = createRelay(me, [T + '/p/' + me, T + '/all'], (topic, m) => {
+    if (m.kind === 'host-up') { open = false; sayHello(); return; }
+    if (m.kind === 'welcome') { setOpen(); return; }
+    if (m.kind === 'msg') { setOpen(); handlers.onMessage(m.payload); }
+  }, () => setTimeout(onState, 0), { topic: T + '/host', msg: { id: 'bye-' + me, from: me, kind: 'bye' } });
+  const iv = setInterval(() => {
+    if (!relay.connected()) return;
+    if (!open) { sayHello(); if (++tries >= 2) handlers.onStatus('nohost'); }
+    else relay.publish(T + '/host', { from: me, kind: 'ping' });
+  }, 5000);
   return {
-    send(msg) {
-      if (conn && conn.open) { try { conn.send(msg); return true; } catch (e) {} }
-      return false;
-    },
-    close() { closed = true; try { peer.destroy(); } catch (e) {} },
+    send(msg) { if (!open) return false; return relay.publish(T + '/host', { from: me, kind: 'msg', payload: msg }); },
+    close() { clearInterval(iv); relay.publish(T + '/host', { from: me, kind: 'bye' }); relay.end(); },
   };
 }
 
